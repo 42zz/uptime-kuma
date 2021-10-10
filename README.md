@@ -9,7 +9,7 @@
 
 It is a self-hosted monitoring tool like "Uptime Robot".
 
-<img src="https://louislam.net/uptimekuma/1.jpg" width="512" alt="" />
+<img src="https://uptime.kuma.pet/img/dark.jpg" width="700" alt="" />
 
 ## 🥔 Live Demo
 
@@ -86,9 +86,13 @@ https://github.com/louislam/uptime-kuma/projects/1
 
 ## 🖼 More Screenshots
 
-Dark Mode:
+Light Mode:
 
-<img src="https://user-images.githubusercontent.com/1336778/128710166-908f8d88-9256-43f3-9c49-bfc2c56011d2.png" width="400" alt="" />
+<img src="https://uptime.kuma.pet/img/light.jpg" width="512" alt="" />
+
+Status Page:
+
+<img src="https://user-images.githubusercontent.com/1336778/134628766-a3fe0981-0926-4285-ab46-891a21c3e4cb.png" width="512" alt="" />
 
 Settings Page:
 

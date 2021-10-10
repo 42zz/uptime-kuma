@@ -11,7 +11,9 @@ const { tcping, ping, dnsResolve, checkCertificate, checkStatusCode, getTotalCli
 const { R } = require("redbean-node");
 const { BeanModel } = require("redbean-node/dist/bean-model");
 const { Notification } = require("../notification");
+const { demoMode } = require("../server");
 const version = require("../../package.json").version;
+const apicache = require("../modules/apicache");
 
 /**
  * status:
@@ -166,7 +168,9 @@ class Monitor extends BeanModel {
                         }
                     }
 
-                    debug("Cert Info Query Time: " + (dayjs().valueOf() - certInfoStartTime) + "ms");
+                    if (process.env.TIMELOGGER === "1") {
+                        debug("Cert Info Query Time: " + (dayjs().valueOf() - certInfoStartTime) + "ms");
+                    }
 
                     if (this.type === "http") {
                         bean.status = UP;
@@ -331,6 +335,9 @@ class Monitor extends BeanModel {
                             console.log(e);
                         }
                     }
+
+                    // Clear Status Page Cache
+                    apicache.clear();
                 }
 
             } else {
@@ -357,6 +364,14 @@ class Monitor extends BeanModel {
             previousBeat = bean;
 
             if (! this.isStop) {
+
+                if (demoMode) {
+                    if (beatInterval < 20) {
+                        console.log("beat interval too low, reset to 20s");
+                        beatInterval = 20;
+                    }
+                }
+
                 this.heartbeatInterval = setTimeout(beat, beatInterval * 1000);
             }
 
@@ -530,6 +545,7 @@ class Monitor extends BeanModel {
         const uptime = await this.calcUptime(duration, monitorID);
         io.to(userID).emit("uptime", monitorID, duration, uptime);
     }
+
 }
 
 module.exports = Monitor;

@@ -1,5 +1,5 @@
 export default {
-    languageName: "Danish",
+    languageName: "Danish (Danmark)",
     Settings: "Indstillinger",
     Dashboard: "Dashboard",
     "New Update": "Opdatering tilgængelig",
@@ -192,6 +192,7 @@ export default {
     pushover: "Pushover",
     pushy: "Pushy",
     octopush: "Octopush",
+    promosms: "PromoSMS",
     lunasea: "LunaSea",
     apprise: "Apprise (Support 50+ Notification services)",
     pushbullet: "Pushbullet",

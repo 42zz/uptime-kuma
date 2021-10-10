@@ -1,12 +1,18 @@
 console.log("Welcome to Uptime Kuma");
+const args = require("args-parser")(process.argv);
+const { sleep, debug, getRandomInt, genSecret } = require("../src/util");
+
+debug(args);
 
 if (! process.env.NODE_ENV) {
     process.env.NODE_ENV = "production";
 }
 
-console.log("Node Env: " + process.env.NODE_ENV);
+// Demo Mode?
+const demoMode = args["demo"] || false;
+exports.demoMode = demoMode;
 
-const { sleep, debug, getRandomInt, genSecret } = require("../src/util");
+console.log("Node Env: " + process.env.NODE_ENV);
 
 console.log("Importing Node libraries");
 const fs = require("fs");
@@ -50,8 +56,6 @@ const { basicAuth } = require("./auth");
 const { login } = require("./auth");
 const passwordHash = require("./password-hash");
 
-const args = require("args-parser")(process.argv);
-
 const checkVersion = require("./check-version");
 console.info("Version: " + checkVersion.version);
 
@@ -69,6 +73,10 @@ const sslCert = process.env.SSL_CERT || args["ssl-cert"] || undefined;
  * @type {boolean}
  */
 const testMode = !!args["test"] || false;
+
+if (demoMode) {
+    console.log("==== Demo Mode ====");
+}
 
 console.log("Creating express and socket.io instance");
 const app = express();
@@ -90,7 +98,7 @@ const io = new Server(server);
 module.exports.io = io;
 
 // Must be after io instantiation
-const { sendNotificationList, sendHeartbeatList, sendImportantHeartbeatList } = require("./client");
+const { sendNotificationList, sendHeartbeatList, sendImportantHeartbeatList, sendInfo } = require("./client");
 const { statusPageSocketHandler } = require("./socket-handlers/status-page-socket-handler");
 
 app.use(express.json());
@@ -180,10 +188,7 @@ exports.entryPage = "dashboard";
     console.log("Adding socket handler");
     io.on("connection", async (socket) => {
 
-        socket.emit("info", {
-            version: checkVersion.version,
-            latestVersion: checkVersion.latestVersion,
-        });
+        sendInfo(socket);
 
         totalClient++;
 
@@ -870,6 +875,8 @@ exports.entryPage = "dashboard";
                     msg: "Saved"
                 });
 
+                sendInfo(socket);
+
             } catch (e) {
                 callback({
                     ok: false,
@@ -1041,6 +1048,10 @@ exports.entryPage = "dashboard";
                                 dns_resolve_server: monitorListData[i].dns_resolve_server,
                                 notificationIDList: {},
                             };
+
+                            if (monitorListData[i].pushToken) {
+                                monitor.pushToken = monitorListData[i].pushToken;
+                            }
 
                             let bean = R.dispense("monitor");
 
