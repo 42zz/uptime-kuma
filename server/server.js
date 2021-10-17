@@ -1,16 +1,13 @@
 console.log("Welcome to Uptime Kuma");
 const args = require("args-parser")(process.argv);
 const { sleep, debug, getRandomInt, genSecret } = require("../src/util");
+const config = require("./config");
 
 debug(args);
 
 if (! process.env.NODE_ENV) {
     process.env.NODE_ENV = "production";
 }
-
-// Demo Mode?
-const demoMode = args["demo"] || false;
-exports.demoMode = demoMode;
 
 console.log("Node Env: " + process.env.NODE_ENV);
 
@@ -52,6 +49,9 @@ Notification.init();
 debug("Importing Database");
 const Database = require("./database");
 
+debug("Importing Background Jobs");
+const { initBackgroundJobs } = require("./jobs");
+
 const { basicAuth } = require("./auth");
 const { login } = require("./auth");
 const passwordHash = require("./password-hash");
@@ -78,13 +78,19 @@ const port = parseInt(process.env.UPTIME_KUMA_PORT || process.env.PORT || args.p
 const sslKey = process.env.UPTIME_KUMA_SSL_KEY || process.env.SSL_KEY || args["ssl-key"] || undefined;
 const sslCert = process.env.UPTIME_KUMA_SSL_CERT || process.env.SSL_CERT || args["ssl-cert"] || undefined;
 
+// 2FA / notp verification defaults
+const twofa_verification_opts = {
+    "window": 1,
+    "time": 30
+}
+
 /**
  * Run unit test after the server is ready
  * @type {boolean}
  */
 const testMode = !!args["test"] || false;
 
-if (demoMode) {
+if (config.demoMode) {
     console.log("==== Demo Mode ====");
 }
 
@@ -275,7 +281,7 @@ exports.entryPage = "dashboard";
                 }
 
                 if (data.token) {
-                    let verify = notp.totp.verify(data.token, user.twofa_secret);
+                    let verify = notp.totp.verify(data.token, user.twofa_secret, twofa_verification_opts);
 
                     if (verify && verify.delta == 0) {
                         callback({
@@ -393,7 +399,7 @@ exports.entryPage = "dashboard";
                 socket.userID,
             ]);
 
-            let verify = notp.totp.verify(token, user.twofa_secret);
+            let verify = notp.totp.verify(token, user.twofa_secret, twofa_verification_opts);
 
             if (verify && verify.delta == 0) {
                 callback({
@@ -519,6 +525,9 @@ exports.entryPage = "dashboard";
                 bean.name = monitor.name;
                 bean.type = monitor.type;
                 bean.url = monitor.url;
+                bean.method = monitor.method;
+                bean.body = monitor.body;
+                bean.headers = monitor.headers;
                 bean.interval = monitor.interval;
                 bean.retryInterval = monitor.retryInterval;
                 bean.hostname = monitor.hostname;
@@ -1044,6 +1053,9 @@ exports.entryPage = "dashboard";
                                 name: monitorListData[i].name,
                                 type: monitorListData[i].type,
                                 url: monitorListData[i].url,
+                                method: monitorListData[i].method || "GET",
+                                body: monitorListData[i].body,
+                                headers: monitorListData[i].headers,
                                 interval: monitorListData[i].interval,
                                 retryInterval: retryInterval,
                                 hostname: monitorListData[i].hostname,
@@ -1248,6 +1260,8 @@ exports.entryPage = "dashboard";
             startUnitTest();
         }
     });
+
+    initBackgroundJobs(args);
 
 })();
 
